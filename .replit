@@ -1,0 +1,24 @@
+# Configuración de Replit para Node.js + servidor web
+language = "nodejs"
+run = "node server.js"
+
+# Módulos activos
+modules = ["web", "nodejs-20"]
+
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+packages = ["remote-exec"]
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[[ports]]
+localPort = 5000
+externalPort = 5000
+
+# Variables de entorno (recomendado setearlas en el panel de Replit .env)
+# DB, PORT y NODE_ENV ya las definiste en tu archivo .env
