@@ -1,65 +1,80 @@
 'use strict';
-
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const helmet = require('helmet');
-
-const apiRoutes = require('./routes/api.js');
-const fccTestingRoutes = require('./routes/fcctesting.js');
-const runner = require('./test-runner');
+const mongoose = require('mongoose');
 
 const app = express();
 
-// ---------- Helmet (lo justo que pide FCC) ----------
-app.use(helmet.frameguard({ action: 'sameorigin' }));   // evita clickjacking — Test 2
-app.use(helmet.dnsPrefetchControl({ allow: false }));   // desactiva DNS prefetch — Test 3
-app.use(helmet.referrerPolicy({ policy: 'same-origin' })); // referrer solo same-origin — Test 4
-// -----------------------------------------------------
+// ============================================
+// SEGURIDAD CON HELMET
+// ============================================
+app.use(helmet.referrerPolicy({ policy: 'same-origin' }));
+app.use(helmet.dnsPrefetchControl({ allow: false }));
+app.use(helmet.frameguard({ action: 'sameorigin' }));
 
-// Archivos estáticos
-app.use('/public', express.static(process.cwd() + '/public'));
-
-// CORS (permitido para los tests FCC)
-app.use(cors({ origin: '*' }));
-
-// Body parser
+// ============================================
+// MIDDLEWARES
+// ============================================
+app.use(cors({ origin: '*' })); // FCC requiere CORS habilitado
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Rutas de testing de FCC
-fccTestingRoutes(app);
+// Servir archivos estáticos
+app.use('/public', express.static(process.cwd() + '/public'));
 
-// Rutas de la API (implementaremos en routes/api.js)
+// ============================================
+// CONEXIÓN A MONGODB (SIN OPCIONES DEPRECADAS)
+// ============================================
+mongoose.connect(process.env.DB)
+  .then(() => console.log('✅ MongoDB conectado'))
+  .catch(err => console.error('❌ Error MongoDB:', err));
+
+// ============================================
+// RUTAS API
+// ============================================
+const apiRoutes = require('./routes/api.js');
 apiRoutes(app);
 
-// Página principal
-app.route('/').get((req, res) => {
-  res.sendFile(process.cwd() + '/views/index.html');
+// ============================================
+// RUTAS PARA FRONTEND (HTML)
+// ============================================
+app.route('/b/:board/')
+  .get((req, res) => {
+    res.sendFile(process.cwd() + '/views/board.html');
+  });
+
+app.route('/b/:board/:threadid')
+  .get((req, res) => {
+    res.sendFile(process.cwd() + '/views/thread.html');
+  });
+
+// Index page (home page)
+app.route('/')
+  .get((req, res) => {
+    res.sendFile(process.cwd() + '/views/index.html');
+  });
+
+// ============================================
+// 404 NOT FOUND
+// ============================================
+app.use((req, res, next) => {
+  res.status(404)
+    .type('text')
+    .send('Not Found');
 });
 
-// 404 Not Found
-app.use((req, res) => {
-  res.status(404).type('text').send('Not Found');
-});
-
-// Levantar servidor
+// ============================================
+// PUERTO
+// ============================================
 const PORT = process.env.PORT || 3000;
-const listener = app.listen(PORT, () => {
-  console.log('Your app is listening on port ' + listener.address().port);
-
-  // Si estamos en modo test, corremos los tests después de un timeout
+const listener = app.listen(PORT, '0.0.0.0', () => {
+  console.log('🚀 App escuchando en puerto ' + listener.address().port);
   if (process.env.NODE_ENV === 'test') {
-    console.log('Running Tests...');
-    setTimeout(() => {
-      try {
-        runner.run();
-      } catch (err) {
-        console.log('Tests are not valid:');
-        console.error(err);
-      }
-    }, 1500); // tiempo para que todo esté estable
+    console.log('⚠️  Modo TEST activado');
   }
 });
 
-module.exports = app; // necesario para chai-http en tests
+module.exports = app; // Para los tests de FCC
