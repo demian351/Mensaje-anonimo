@@ -11,9 +11,9 @@ const app = express();
 // ============================================
 // SEGURIDAD CON HELMET
 // ============================================
-app.use(helmet.referrerPolicy({ policy: 'same-origin' }));
-app.use(helmet.dnsPrefetchControl({ allow: false }));
 app.use(helmet.frameguard({ action: 'sameorigin' }));
+app.use(helmet.dnsPrefetchControl({ allow: false }));
+app.use(helmet.referrerPolicy({ policy: 'same-origin' }));
 
 // ============================================
 // MIDDLEWARES

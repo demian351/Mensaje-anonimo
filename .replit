@@ -16,9 +16,7 @@ packages = ["remote-exec"]
 localPort = 3000
 externalPort = 80
 
-[[ports]]
-localPort = 5000
-externalPort = 5000
+
 
 # Variables de entorno (recomendado setearlas en el panel de Replit .env)
 # DB, PORT y NODE_ENV ya las definiste en tu archivo .env
